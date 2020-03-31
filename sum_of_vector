@@ -7,7 +7,8 @@
 #define N 10
 using namespace std;
 __global__ void add(int *a, int *b, int *c) {
-	int tid = blockIdx.x;
+	int tid = blockIdx.x;       //blockIdx是内置变量，在CUDA运行时已经预先定义了。
+	                            //第一个线程块的blockIdx.x为0，最后一个线程块blockIdx.x为N-1。
 	if (tid < N)
 		c[tid] = a[tid] + b[tid];
 }
@@ -30,7 +31,8 @@ int main()
 	HANDLE_ERROR(cudaMemcpy(dev_a, a, N * sizeof(int),cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaMemcpy(dev_b, b, N * sizeof(int), cudaMemcpyHostToDevice));
 
-	add <<<N, 1 >>> (dev_a, dev_b, dev_c);
+	add <<<N, 1 >>> (dev_a, dev_b, dev_c); //第一个值N：表示该设备执行核函数时，使用并行线程块的数量为N。
+	                                       //第二个值1：表示并行线程数量为1。
 
 	//将数组‘c’从GPU复制到CPU
 	HANDLE_ERROR(cudaMemcpy(c, dev_c, N * sizeof(int), cudaMemcpyDeviceToHost));
