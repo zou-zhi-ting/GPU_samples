@@ -1,0 +1,54 @@
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include <cuda.h>
+#include <device_functions.h>
+#include <opencv2\opencv.hpp>
+#include <iostream>
+#include <math.h>
+using namespace std;
+using namespace cv;
+
+__global__ void rgb2grayInCuda(uchar3 *dataIn, unsigned char *dataOut, int imgHeight, int imgWidth)
+{
+	int xIndex = threadIdx.x + blockIdx.x * blockDim.x;
+	int yIndex = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (xIndex < imgWidth && yIndex < imgHeight)
+	{
+		uchar3 rgb = dataIn[yIndex * imgWidth + xIndex];
+		int gray = (0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z)>127?1:0;
+		dataOut[yIndex * imgWidth + xIndex] =255*gray;
+	}
+}
+
+int main()
+{
+	//传入图片
+	Mat srcImg = imread("K:/bird.jpg");
+	namedWindow("src", 1);
+	imshow("src", srcImg);
+	int imgHeight = srcImg.rows;
+	int imgWidth = srcImg.cols;
+	Mat grayImg(imgHeight, imgWidth, CV_8UC1, Scalar(0));//输出灰度图
+	//在GPU中开辟输入输出空间
+	uchar3 *d_in;
+	unsigned char *d_out;
+	cudaMalloc((void**)&d_in, imgHeight * imgWidth * sizeof(uchar3));
+	cudaMalloc((void**)&d_out, imgHeight * imgWidth * sizeof(unsigned char));
+	//将图像数据传入GPU中
+	cudaMemcpy(d_in, srcImg.data, imgHeight * imgWidth * sizeof(uchar3), cudaMemcpyHostToDevice);
+	dim3 threadsPerBlock(32, 32);
+	dim3 blocksPerGrid((imgWidth + threadsPerBlock.x - 1) / threadsPerBlock.x, (imgHeight + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+	//灰度化
+	rgb2grayInCuda << <blocksPerGrid, threadsPerBlock >> >(d_in, d_out, imgHeight, imgWidth);
+
+	cudaMemcpy(grayImg.data, d_out, imgHeight * imgWidth * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+
+	namedWindow("dst", 1);
+	imshow("dst", grayImg);
+	cudaFree(d_in);
+	cudaFree(d_out);
+	waitKey(0);
+	return 0;
+}
