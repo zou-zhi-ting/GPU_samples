@@ -31,12 +31,13 @@ int main()
 	int imgWidth = srcImg.cols;
 	Mat grayImg(imgHeight, imgWidth, CV_8UC1, Scalar(0));//输出灰度图
 	//在GPU中开辟输入输出空间
-	uchar3 *d_in;
-	unsigned char *d_out;
+	uchar3 *d_in;          //r、g、b通道各占8位
+	unsigned char *d_out;  //灰度图像只占8位
 	cudaMalloc((void**)&d_in, imgHeight * imgWidth * sizeof(uchar3));
 	cudaMalloc((void**)&d_out, imgHeight * imgWidth * sizeof(unsigned char));
 	//将图像数据传入GPU中
 	cudaMemcpy(d_in, srcImg.data, imgHeight * imgWidth * sizeof(uchar3), cudaMemcpyHostToDevice);
+	                                      //src.data指向图片起始位置
 	dim3 threadsPerBlock(32, 32);
 	dim3 blocksPerGrid((imgWidth + threadsPerBlock.x - 1) / threadsPerBlock.x, (imgHeight + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
