@@ -1,0 +1,50 @@
+/**********使用cutil.h中的函数***********/
+unsigned int timer=0;
+//创建计时器
+cutCreateTimer(&timer);
+//开始计时
+cutStartTimer(timer);
+
+  //统计的代码段
+  …………
+
+
+//停止计时
+cutStopTimer(timer);
+//获得从开始计时到停止之间的时间
+cutGetTimerValue( timer);
+//删除timer值
+cutDeleteTimer( timer);
+
+/**************使用time.h中的函数****************/
+clock_t start, finish;
+float costtime;
+start = clock();
+
+  //统计的代码段
+  …………
+
+finish = clock();
+//得到两次记录之间的时间差
+costtime = (float)(finish - start) / CLOCKS_PER_SEC;
+时钟计时单元的长度为1毫秒，那么计时的精度也为1毫秒。
+
+/************事件event****************/
+cudaEvent_t start,stop;
+cudaEventCreate(&start);
+cudaEventCreate(&stop);
+cudaEventRecord(start,0);
+
+  //统计的代码段
+   …………
+
+cudaEventRecord(stop,0);
+float costtime;
+cudaEventElapsedTime(&costtime,start,stop);
+
+/************备注**************/
+cudaError_t cudaEventCreate( cudaEvent_t* event )---创建事件对象；
+cudaError_t cudaEventRecord( cudaEvent_t event，CUstream stream )--- 记录事件；
+cudaError_t cudaEventElapsedTime( float* time，cudaEvent_t start，cudaEvent_t end )---计算两次事件之间相差的时间；
+cudaError_t cudaEventDestroy( cudaEvent_t event )---销毁事件对象。
+计算两次事件之间相差的时间（以毫秒为单位，精度为0.5微秒）。如果尚未记录其中任何一个事件，此函数将返回cudaErrorInvalidValue。如果记录其中任何一个事件使用了非零流，则结果不确定。
